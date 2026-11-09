@@ -43,29 +43,32 @@ Official device tree and recovery configuration for building and running **AERA 
 
 ---
 
-## ⚠️ Known Issues & Bugs (Известные проблемы и баги)
+## ⚠️ Known Issues & Bugs
 
-### 1. 🔴 Дешифрование данных (`/data` / Internal Storage FBE Decryption)
-- **Проблема**: Раздел `/data` (F2FS) зашифрован с использованием аппаратного шифрования метаданных (Metadata Encryption + FBE v2). При загрузке AERA Recovery выдает:
+### 1. 🔴 Internal Storage Decryption (`/data` / FBE v2 Metadata Encryption)
+- **Problem**: The `/data` partition (formatted as F2FS) uses hardware-backed metadata encryption with FBE v2. During recovery boot, Vold fails to connect to `keystore2` over AIDL:
   ```
   I:Unable to decrypt metadata encryption
   I:FBE setup failed. Trying FDE...
   E recovery: Vold unable to connect to keystore2.
   W ServiceManagerCppClient: Failed to getService in waitForService for android.system.keystore2.IKeystoreService/default: Status(-129, EX_TRANSACTION_FAILED): 'PERMISSION_DENIED'
   ```
-- **Следствие**: В веб-интерфейсе AERA (`https://localhost:8443`) отображается предупреждение *"Unlock internal storage in recovery before transferring installation files"*, внутренний накопитель (`/data/media/0`) не монтируется.
-- **Временный воркэраунд**: Для прошивки zip-файлов используйте **ADB Sideload** (`adb sideload file.zip`), флешку через **USB-OTG** или MicroSD карту.
+- **Symptom**: The AERA web interface (`https://localhost:8443`) displays *"Unlock internal storage in recovery before transferring installation files"*, and `/data` (`/data/media/0`) remains locked/unmounted.
+- **Workaround**: Flash ROMs or ZIP packages using **ADB Sideload** (`adb sideload package.zip`), a **USB-OTG** flash drive, or an external **MicroSD** card.
 
-### 2. 🟡 Подключение к Wi-Fi через веб-интерфейс / UI
-- **Проблема**: Драйвер `icnss2` и прошивка WLAN подгружаются успешно, интерфейс `wlan0` создается в системе, однако управляющий сокет `wpa_supplicant` (`/tmp/recovery/sockets/wlan0`) периодически не отвечает графическому интерфейсу AERA из-за таймингов инициализации и SELinux контекстов.
-- **Следствие**: Wi-Fi сети могут не отображаться в веб-панели recovery или подключение сбрасывается.
+### 2. 🟡 Wi-Fi Connection via Web UI
+- **Problem**: The `icnss2` kernel driver and WLAN firmware load properly, creating the `wlan0` network interface. However, the `wpa_supplicant` control socket (`/tmp/recovery/sockets/wlan0`) intermittently fails to respond to the AERA web interface due to timing and SELinux context mismatches during early boot.
+- **Symptom**: Available Wi-Fi networks may fail to appear in the recovery web dashboard or connections may drop.
 
-### 3. 🟡 Затухание экрана по таймауту (Display Idle Timeout)
-- **Проблема**: По умолчанию в AERA Recovery включен агрессивный таймаут гашения экрана, из-за чего через минуту бездействия дисплей выключается (`display suspended by idle timeout`), что выглядит как зависание устройства.
-- **Решение**: Прописаны параметры `tw_screen_timeout_secs=0`, `ro.recovery.screen_timeout=0` в `prop.default`. Если экран погас — достаточно нажать кнопку питания (Power).
+### 3. 🟡 Screen Suspend / Idle Timeout
+- **Problem**: AERA Recovery defaults to a short screen sleep timer, suspending the display after idle timeout (`display suspended by idle timeout`), which can be easily mistaken for a device hang or freeze.
+- **Fix / Workaround**: `tw_screen_timeout_secs=0` and `ro.recovery.screen_timeout=0` are configured in `prop.default`. If the display blanks, press the **Power** button to wake it up.
 
-### 4. 🟡 Мобильный интернет (Cellular Data)
-- **Проблема**: Демон `aera-cellular-provider` пропатчен и запускается под init, модемная подсистема `remoteproc2` и роутер QRTR работают, однако автоматическая маршрутизация трафика мобильных данных (APN / default route) требует доработки сетевого стека.
+### 4. 🟡 Cellular Mobile Data Routing
+- **Problem**: The `aera-cellular-provider` daemon is patched and running with the `remoteproc2` (MSS) modem subsystem and QRTR router. However, automated cellular IP route configuration (APN data provisioning and default routing) is still work-in-progress (WIP).
+
+---
+
 
 ## 📦 Flashing Instructions
 
