@@ -1,0 +1,114 @@
+import /init.recovery.wifi.rc
+import /init.recovery.cellular.rc
+
+# Set SELinux to Permissive
+on early-init
+    setprop servicemanager.ready true
+    write /sys/fs/selinux/enforce 0
+    write /proc/sys/kernel/firmware_config/force_sysfs_fallback 1
+
+on early-fs
+    write /proc/sys/walt/sched_lib_name "recovery,magiskboot,Updater,updater,update_engine_sideload"
+    write /proc/sys/walt/sched_lib_mask_force 255
+
+on init
+    start boot-hal-1-2
+
+on fs
+    wait /dev/block/platform/soc/${ro.boot.bootdevice}
+    symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
+    symlink /dev/block/bootdevice/by-name/modem /dev/block/bootdevice/by-name/modemfirmware
+    symlink /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix} /dev/block/bootdevice/by-name/modemfirmware${ro.boot.slot_suffix}
+
+    chmod 0660 /dev/qseecom
+    chown system drmrpc /dev/qseecom
+    chmod 0664 /dev/ion
+    chown system system /dev/ion
+    install_keyring
+
+    mkdir /vendor 0755 root root
+    mount erofs /dev/block/bootdevice/by-name/vendor /vendor ro
+    mkdir /vendor_dlkm 0755 root root
+    mount erofs /dev/block/bootdevice/by-name/vendor_dlkm /vendor_dlkm ro
+
+    mkdir /firmware 0755 root root
+    mount vfat /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix} /firmware ro
+    mkdir /vendor/firmware_mnt 0755 root root
+    mount none /firmware /vendor/firmware_mnt bind rec
+
+    mkdir /vendor/bt_firmware 0755 root root
+    mount vfat /dev/block/bootdevice/by-name/bluetooth${ro.boot.slot_suffix} /vendor/bt_firmware ro
+
+    mkdir /vendor/dsp 0755 root root
+    mount ext4 /dev/block/bootdevice/by-name/dsp${ro.boot.slot_suffix} /vendor/dsp ro
+
+    mkdir /persist 0775 root system
+    mount ext4 /dev/block/bootdevice/by-name/persist /persist rw
+    mkdir /mnt/vendor 0775 shell system
+    symlink /persist /mnt/vendor/persist
+
+    mkdir /dev/disk 0755 root root
+    mkdir /dev/disk/by-partlabel 0755 root root
+    symlink /dev/block/bootdevice/by-name/modemst1 /dev/disk/by-partlabel/modemst1
+    symlink /dev/block/bootdevice/by-name/modemst2 /dev/disk/by-partlabel/modemst2
+    symlink /dev/block/bootdevice/by-name/fsg /dev/disk/by-partlabel/fsg
+    symlink /dev/block/bootdevice/by-name/fsc /dev/disk/by-partlabel/fsc
+
+    mkdir /boot 0755 root root
+    symlink /dev/block/bootdevice/by-name/modemst1 /boot/modem_fs1
+    symlink /dev/block/bootdevice/by-name/modemst2 /boot/modem_fs2
+    symlink /dev/block/bootdevice/by-name/fsg /boot/modem_fsg
+    symlink /dev/block/bootdevice/by-name/fsc /boot/modem_fsc
+
+    mkdir /etc/firmware/wlan 0755 root root
+    mkdir /etc/firmware/wlan/qca_cld 0755 root root
+    symlink /vendor/etc/wifi/WCNSS_qcom_cfg.ini /etc/firmware/wlan/qca_cld/WCNSS_qcom_cfg.ini
+
+    write /dev/ipa 1
+
+on boot
+    setprop sys.usb.config adb
+
+# Haptic feedback
+on boot
+    write /sys/class/leds/vibrator/trigger transient
+    start vibratorfeature-hal-service
+
+service aera-rmtfs /system/bin/aera-mobile-rmtfs -r -P
+    class core
+    user root
+    group root
+    seclabel u:r:recovery:s0
+    stdio_to_kmsg
+
+service aera-tftp /system/bin/aera-mobile-tftp
+    class core
+    user root
+    group root
+    seclabel u:r:recovery:s0
+    stdio_to_kmsg
+
+on property:twrp.modules.loaded=true
+    start aera-rmtfs
+    start aera-tftp
+    wait /sys/kernel/boot_adsp/boot
+    write /sys/kernel/boot_adsp/boot 1
+    wait /sys/class/power_supply/battery
+    start health-hal-2-1
+
+# Symlink Flashlight
+on property:twrp.modules.loaded=true
+    symlink /sys/class/leds/led:torch/brightness /system/etc/flashlight/brightness
+
+on post-fs
+    insmod /vendor/lib/modules/1.1/spi-msm-geni.ko
+    insmod /vendor/lib/modules/1.1/xiaomi_tp.ko
+    insmod /vendor/lib/modules/1.1/lct_tp.ko
+    insmod /vendor/lib/modules/1.1/panel_event_notifier.ko
+    insmod /vendor/lib/modules/1.1/xm_adapter_class.ko
+    insmod /vendor/lib/modules/1.1/qcom-pmic-voter.ko
+    insmod /vendor/lib/modules/1.1/nopmi-chg.ko
+    insmod /vendor/lib/modules/1.1/miev.ko
+    insmod /vendor/lib/modules/1.1/xiaomi_touch_game.ko
+    insmod /vendor/lib/modules/1.1/focaltech_ts_i2c.ko
+    insmod /vendor/lib/modules/1.1/td4376_spi.ko

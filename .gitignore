@@ -1,0 +1,10 @@
+# Build artifacts & binaries
+*.img
+*.zip
+*.cpio
+*.raw
+*.tar
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

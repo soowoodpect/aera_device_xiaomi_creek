@@ -1,0 +1,23 @@
+system          /system          erofs     ro     wait,logical,first_stage_mount
+system          /system          ext4      ro     wait,logical,first_stage_mount
+system_ext      /system_ext      erofs     ro     wait,logical,first_stage_mount
+system_ext      /system_ext      ext4      ro     wait,logical,first_stage_mount
+product         /product         erofs     ro     wait,logical,first_stage_mount
+product         /product         ext4      ro     wait,logical,first_stage_mount
+vendor          /vendor          erofs     ro     wait,logical,first_stage_mount
+vendor          /vendor          ext4      ro     wait,logical,first_stage_mount
+odm             /odm             erofs     ro     wait,logical,first_stage_mount
+odm             /odm             ext4      ro     wait,logical,first_stage_mount
+vendor_dlkm     /vendor_dlkm     erofs     ro     wait,logical,first_stage_mount
+vendor_dlkm     /vendor_dlkm     ext4      ro     wait,logical,first_stage_mount
+system_dlkm     /system_dlkm     erofs     ro     wait,logical,first_stage_mount
+system_dlkm     /system_dlkm     ext4      ro     wait,logical,first_stage_mount
+
+/dev/block/bootdevice/by-name/super        /super        emmc    defaults    defaults
+/dev/block/bootdevice/by-name/metadata     /metadata     f2fs    noatime,nosuid,nodev,discard    wait,check,formattable,first_stage_mount
+/dev/block/bootdevice/by-name/userdata     /data         f2fs    noatime,nosuid,nodev,discard    latemount,wait,formattable,quota,checkpoint=fs
+/dev/block/bootdevice/by-name/misc         /misc         emmc    defaults    defaults
+/dev/block/bootdevice/by-name/persist      /persist      ext4    noatime,nosuid,nodev    wait
+/dev/block/bootdevice/by-name/rescue       /cache        ext4    noatime,nosuid,nodev    wait
+/dev/block/bootdevice/by-name/boot         /boot         emmc    defaults    defaults
+/dev/block/bootdevice/by-name/recovery     /recovery     emmc    defaults    defaults

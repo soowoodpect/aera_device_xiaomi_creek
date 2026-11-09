@@ -1,0 +1,77 @@
+#
+# Copyright (C) 2026 The Android Open Source Project
+# Copyright (C) 2026 AERA Project
+#
+# Maintainer: soowood
+#
+
+DEVICE_PATH := device/xiaomi/creek
+
+# Architecture
+TARGET_ARCH := arm64
+TARGET_ARCH_VARIANT := armv8-a
+TARGET_CPU_ABI := arm64-v8a
+TARGET_CPU_ABI2 :=
+TARGET_CPU_VARIANT := cortex-a73
+
+TARGET_2ND_ARCH := arm
+TARGET_2ND_ARCH_VARIANT := armv8-a
+TARGET_2ND_CPU_ABI := armeabi-v7a
+TARGET_2ND_CPU_ABI2 := armeabi
+TARGET_2ND_CPU_VARIANT := cortex-a73
+
+# Platform & Bootloader
+TARGET_BOOTLOADER_BOARD_NAME := creek
+TARGET_BOARD_PLATFORM := bengal
+TARGET_BOARD_PLATFORM_GPU := qcom-adreno610
+TARGET_USES_UEFI := true
+
+# Kernel & Boot Image Header v4
+BOARD_BOOT_HEADER_VERSION := 4
+BOARD_KERNEL_PAGESIZE := 4096
+BOARD_KERNEL_BASE := 0x00000000
+BOARD_RAMDISK_OFFSET := 0x01000000
+BOARD_TAGS_OFFSET := 0x00000100
+BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOT_HEADER_VERSION)
+
+# Partition Configuration
+BOARD_FLASH_BLOCK_SIZE := 262144
+BOARD_RECOVERYIMAGE_PARTITION_SIZE := 104857600
+BOARD_HAS_NO_REAL_SDCARD := true
+
+# Dynamic Partitions (VAB)
+BOARD_SUPER_PARTITION_SIZE := 9126805504
+BOARD_SUPER_PARTITION_GROUPS := qti_dynamic_partitions
+BOARD_QTI_DYNAMIC_PARTITIONS_PARTITION_LIST := \
+    system \
+    system_ext \
+    product \
+    vendor \
+    odm \
+    vendor_dlkm \
+    system_dlkm
+
+# Filesystem Support
+TARGET_USERIMAGES_USE_EXT4 := true
+TARGET_USERIMAGES_USE_F2FS := true
+BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
+
+# Display & UI
+TARGET_SCREEN_WIDTH := 1080
+TARGET_SCREEN_HEIGHT := 2340
+TARGET_SCREEN_DENSITY := 440
+TW_THEME := portrait_hdpi
+TW_SCREEN_BLANK_ON_BOOT := true
+
+# AERA / Recovery Features
+TW_INCLUDE_CRYPTO := true
+TW_INCLUDE_FBE_METADATA_DECRYPT := true
+BOARD_USES_QCOM_FBE_DECRYPTION := true
+TW_EXTRA_LANGUAGES := true
+RECOVERY_SDCARD_ON_DATA := true
+TARGET_RECOVERY_QCOM_RTC_FIX := true
+TW_EXCLUDE_DEFAULT_USB_INIT := true
+
+# Maintainer Branding
+AERA_MAINTAINER := soowood
+OF_MAINTAINER := soowood
