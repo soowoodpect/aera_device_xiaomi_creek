@@ -34,13 +34,38 @@ Official device tree and recovery configuration for building and running **AERA 
 | **DRM Graphics / Display** | 🟢 **Working** | Full native resolution (1080x2340 @ 120Hz) |
 | **Dynamic Partitions** | 🟢 **Working** | Super partition mapping (EROFS & EXT4 for system, vendor, product, odm) |
 | **ADB & Fastbootd** | 🟢 **Working** | ADB root shell and fastbootd operational |
-| **MTP File Transfer** | 🟢 **Working** | USB FunctionFS MTP responder active |
-| **Cellular Modem Subsystem** | 🟢 **Working** | `remoteproc2` MSS + `aera-mobile-rmtfs` + `aera-mobile-tftp` running |
-| **AERA Cellular Provider** | 🟢 **Working** | Daemon active; hardware SKU peridot restrictions bypassed |
-| **Wi-Fi Driver Stack** | 🟢 **Working** | Firmware mapped, deterministic MAC generated, `wpa_supplicant` AIDL patched |
+| **Cellular Modem Subsystem** | 🟢 **Working** | `remoteproc2` MSS + `aera-mobile-rmtfs` + `aera-mobile-tftp` active |
+| **AERA Cellular Provider** | 🟡 **WIP** | Daemon starts and connects to QRTR; mobile data IP routing WIP |
+| **Wi-Fi Driver Stack** | 🟡 **WIP** | Driver (`icnss2` + `wlan0`) loads; `wpa_supplicant` socket connection unstable |
+| **Data Decryption (`/data`)** | 🔴 **Broken** | FBE v2 / Metadata encryption fails (Keystore2 AIDL permission issue) |
+| **MTP File Transfer** | 🟡 **Limited** | Works, but internal storage inaccessible until `/data` decryption is resolved |
 | **Haptic Feedback** | 🟢 **Working** | `vibratorfeature-hal-service` operational |
 
 ---
+
+## ⚠️ Known Issues & Bugs (Известные проблемы и баги)
+
+### 1. 🔴 Дешифрование данных (`/data` / Internal Storage FBE Decryption)
+- **Проблема**: Раздел `/data` (F2FS) зашифрован с использованием аппаратного шифрования метаданных (Metadata Encryption + FBE v2). При загрузке AERA Recovery выдает:
+  ```
+  I:Unable to decrypt metadata encryption
+  I:FBE setup failed. Trying FDE...
+  E recovery: Vold unable to connect to keystore2.
+  W ServiceManagerCppClient: Failed to getService in waitForService for android.system.keystore2.IKeystoreService/default: Status(-129, EX_TRANSACTION_FAILED): 'PERMISSION_DENIED'
+  ```
+- **Следствие**: В веб-интерфейсе AERA (`https://localhost:8443`) отображается предупреждение *"Unlock internal storage in recovery before transferring installation files"*, внутренний накопитель (`/data/media/0`) не монтируется.
+- **Временный воркэраунд**: Для прошивки zip-файлов используйте **ADB Sideload** (`adb sideload file.zip`), флешку через **USB-OTG** или MicroSD карту.
+
+### 2. 🟡 Подключение к Wi-Fi через веб-интерфейс / UI
+- **Проблема**: Драйвер `icnss2` и прошивка WLAN подгружаются успешно, интерфейс `wlan0` создается в системе, однако управляющий сокет `wpa_supplicant` (`/tmp/recovery/sockets/wlan0`) периодически не отвечает графическому интерфейсу AERA из-за таймингов инициализации и SELinux контекстов.
+- **Следствие**: Wi-Fi сети могут не отображаться в веб-панели recovery или подключение сбрасывается.
+
+### 3. 🟡 Затухание экрана по таймауту (Display Idle Timeout)
+- **Проблема**: По умолчанию в AERA Recovery включен агрессивный таймаут гашения экрана, из-за чего через минуту бездействия дисплей выключается (`display suspended by idle timeout`), что выглядит как зависание устройства.
+- **Решение**: Прописаны параметры `tw_screen_timeout_secs=0`, `ro.recovery.screen_timeout=0` в `prop.default`. Если экран погас — достаточно нажать кнопку питания (Power).
+
+### 4. 🟡 Мобильный интернет (Cellular Data)
+- **Проблема**: Демон `aera-cellular-provider` пропатчен и запускается под init, модемная подсистема `remoteproc2` и роутер QRTR работают, однако автоматическая маршрутизация трафика мобильных данных (APN / default route) требует доработки сетевого стека.
 
 ## 📦 Flashing Instructions
 
